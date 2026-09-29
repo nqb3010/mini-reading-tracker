@@ -6,9 +6,9 @@
 
 ## Demo Links
 
-- **Frontend URL**: `https://...` *(Cập nhật sau khi deploy VPS)*
-- **Backend API**: `https://.../api`
-- **Swagger Docs**: `https://.../api/docs`
+- **Frontend URL**: [https://baonq.site](https://baonq.site)
+- **Backend API**: [https://baonq.site/api](https://baonq.site/api)
+- **Swagger Docs**: [https://baonq.site/api/docs](https://baonq.site/api/docs)
 
 ---
 
@@ -212,55 +212,92 @@ Tài liệu tương tác: **Swagger UI** tại [`/api/docs`](http://localhost:30
 
 ---
 
-## Deploy (aaPanel — một VPS)
+## Deploy (aaPanel / Nginx VPS cho domain baonq.site)
 
 ### Cấu trúc trên server
 
 ```
-/www/wwwroot/reading-tracker/
-├── backend/          ← Node.js app (PM2)
-├── frontend/dist/    ← Static files (Nginx)
+/www/wwwroot/baonq.site/
+├── backend/          ← Node.js app (PM2 :3000)
+├── frontend/dist/    ← Static bundle (Nginx phục vụ trực tiếp)
 ```
 
-### Các bước
+### Các bước triển khai
 
 ```bash
-# 1. Clone repo
-git clone <repo-url> /www/wwwroot/reading-tracker
+# 1. Trỏ DNS Domain:
+#    - Record A: @     -> <IP_VPS>
+#    - Record A: www   -> <IP_VPS>
 
-# 2. Backend — cấu hình .env (không commit file này)
-cd /www/wwwroot/reading-tracker/backend
+# 2. Clone repo vào thư mục web:
+git clone https://github.com/nqb3010/mini-reading-tracker.git /www/wwwroot/baonq.site
+cd /www/wwwroot/baonq.site
+
+# 3. Cấu hình Backend:
+cd backend
+cp .env.example .env
+# Chỉnh sửa .env: điền mật khẩu MySQL, port, CORS_ORIGINS=https://baonq.site,http://baonq.site
+
 npm install --omit=dev
 node src/db/migrate.js
 node src/db/seed.js
 
-# 3. Khởi động PM2
+# Khởi động Backend với PM2:
 pm2 start src/server.js --name reading-tracker-api
 pm2 save
+pm2 startup
 
-# 4. Build frontend
+# 4. Build Frontend:
 cd ../frontend
 npm install
-npm run build        # → dist/
-
-# 5. Nginx config (trong aaPanel)
-#    - Root: /www/wwwroot/reading-tracker/frontend/dist
-#    - Rewrite: try_files $uri $uri/ /index.html
-#    - Proxy /api/: http://127.0.0.1:3000
-#    - SSL: Let's Encrypt qua aaPanel
+npm run build        # output sinh ra thư mục /www/wwwroot/baonq.site/frontend/dist/
 ```
 
-**Nginx snippet:**
+### Cấu hình Nginx Virtual Host (baonq.site)
 
 ```nginx
-location /api/ {
-    proxy_pass         http://127.0.0.1:3000;
-    proxy_set_header   Host $host;
-    proxy_set_header   X-Real-IP $remote_addr;
+server {
+    listen 80;
+    listen [::]:80;
+    server_name baonq.site www.baonq.site;
+
+    # Tự động redirect sang HTTPS
+    return 301 https://$host$request_uri;
 }
 
-location / {
-    try_files $uri $uri/ /index.html;
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name baonq.site www.baonq.site;
+
+    # Chứng chỉ Let's Encrypt SSL (tạo qua aaPanel hoặc certbot)
+    # ssl_certificate     /www/server/panel/vhost/cert/baonq.site/fullchain.pem;
+    # ssl_certificate_key /www/server/panel/vhost/cert/baonq.site/privkey.pem;
+
+    root /www/wwwroot/baonq.site/frontend/dist;
+    index index.html;
+
+    # Nén Gzip
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml text/javascript;
+
+    # Frontend Single Page App (Vue Router HTML5 history mode)
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Reverse proxy toàn bộ request /api sang Node.js Express backend
+    location /api/ {
+        proxy_pass         http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Connection 'upgrade';
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
 }
 ```
 

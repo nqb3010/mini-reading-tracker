@@ -16,6 +16,8 @@ info:
 # Ứng dụng một người dùng, không có xác thực (spec FR-034).
 security: []
 servers:
+  - url: https://baonq.site
+    description: Production server (HTTPS)
   - url: http://localhost:3000
     description: Backend khi chạy local (cổng 3000, frontend proxy /api)
 tags:
