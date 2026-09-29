@@ -1,20 +1,47 @@
 :root {
-  --space-1:  4px;
-  --space-2:  8px;
-  --space-3:  12px;
-  --space-4:  16px;
-  --space-5:  20px;
-  --space-6:  24px;
-  --space-8:  32px;
-  --space-10: 40px;
-  --space-16: 64px;
+  /* ============================================================
+     W3 Procurement — Spacing, radius, shadow, layout tokens
+     4px base grid. shadcn --radius = 0.5rem (8px). Cards use shadow-sm;
+     the app header is a fixed 56px bar.
+     ============================================================ */
 
-  --radius-sm:   3px;
-  --radius-md:   6px;
-  --radius-lg:   8px;
-  --radius-full: 9999px;
+  /* Spacing scale (4px base) */
+  --space-0:   0px;
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
 
-  --header-h:  48px;
-  --dur-fast:  120ms;
-  --dur-normal:200ms;
+  /* Radius — shadcn scale off --radius (8px) */
+  --radius-sm:   4px;    /* calc(0.5rem - 4px) */
+  --radius-md:   6px;    /* calc(0.5rem - 2px) — buttons, inputs, chips */
+  --radius-lg:   8px;    /* cards, panels */
+  --radius-xl:   12px;
+  --radius-full: 9999px; /* pills, avatars, badges */
+
+  /* Shadows — soft, low-contrast (enterprise restraint) */
+  --shadow-xs:  0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm:  0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  --shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  --shadow-popover: 0 4px 16px rgb(0 0 0 / 0.12);
+
+  /* Layout */
+  --header-h:     56px;     /* @kind spacing */
+  --content-max:  2000px;   /* @kind spacing */
+  --page-pad-x:   20px;     /* @kind spacing */
+  --ring-width:   2px;     /* @kind spacing */
+  --ring-offset:  2px;     /* @kind spacing */
+
+  /* Motion — short, functional ease-out fades; no bounce */
+  --ease-out:     cubic-bezier(0.16, 1, 0.3, 1);  /* @kind other */
+  --ease-standard:cubic-bezier(0.4, 0, 0.2, 1);   /* @kind other */
+  --dur-fast:     120ms;   /* @kind other */
+  --dur-base:     200ms;   /* @kind other */
 }

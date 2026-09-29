@@ -65,6 +65,12 @@ function openBook(workId) {
 
 <template>
   <main class="rt-page">
+    <nav class="breadcrumb" aria-label="Đường dẫn">
+      <ol class="breadcrumb__list">
+        <li class="breadcrumb__item"><RouterLink to="/" class="breadcrumb__link">Trang chủ</RouterLink></li>
+        <li class="breadcrumb__item"><span class="breadcrumb__sep">/</span><span class="breadcrumb__current">Tìm kiếm sách</span></li>
+      </ol>
+    </nav>
     <div class="rt-title-row">
       <div>
         <h1 class="rt-h1">Tìm kiếm sách</h1>
@@ -75,8 +81,10 @@ function openBook(workId) {
     <div class="search-card">
       <form class="search-form" role="search" @submit.prevent="onSubmit">
         <div class="search-field">
-          <BaseInput
+          <svg class="search-field__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input
             v-model="input"
+            class="input search-input"
             enterkeyhint="search"
             aria-label="Tên sách hoặc tác giả"
             placeholder="Nhập tên sách hoặc tác giả, ví dụ: Harry Potter, Tolkien…"
@@ -173,17 +181,74 @@ function openBook(workId) {
 </template>
 
 <style scoped>
+.breadcrumb {
+  margin-bottom: var(--space-2);
+}
+.breadcrumb__list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.breadcrumb__link {
+  color: var(--gray-500);
+  text-decoration: none;
+}
+.breadcrumb__link:hover {
+  color: var(--primary);
+}
+.breadcrumb__sep {
+  color: var(--gray-400);
+}
+.breadcrumb__current {
+  color: var(--gray-900);
+  font-weight: var(--fw-medium);
+}
+
 .search-card {
-  padding: var(--space-4);
-  background: var(--white);
+  padding: 16px;
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 .search-form { display: flex; gap: var(--space-2); }
 .search-field { position: relative; flex: 1; min-width: 0; }
+.search-field__icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+  pointer-events: none;
+}
+.search-input {
+  display: block;
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--space-8) 0 38px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  color: var(--foreground);
+  font-size: var(--text-base);
+  outline: none;
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+.search-input::placeholder {
+  color: var(--gray-400);
+}
 .clear-btn {
   position: absolute;
-  right: 6px;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
   width: 24px;
@@ -234,7 +299,7 @@ function openBook(workId) {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-3);
-  min-height: 56px;
+  min-height: 64px;
   margin-top: var(--space-4);
   padding: var(--space-3) var(--space-4);
   background: var(--gray-50);

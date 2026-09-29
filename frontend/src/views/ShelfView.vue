@@ -69,12 +69,21 @@ function openBook(workId) {
 
 <template>
   <main class="rt-page">
+    <nav class="breadcrumb" aria-label="Đường dẫn">
+      <ol class="breadcrumb__list">
+        <li class="breadcrumb__item"><RouterLink to="/" class="breadcrumb__link">Trang chủ</RouterLink></li>
+        <li class="breadcrumb__item"><span class="breadcrumb__sep">/</span><span class="breadcrumb__current">Tủ sách của tôi</span></li>
+      </ol>
+    </nav>
     <div class="rt-title-row">
       <div>
         <h1 class="rt-h1">Tủ sách của tôi</h1>
         <p class="rt-sub">Theo dõi tiến độ, đánh giá và ghi chú cho từng cuốn sách.</p>
       </div>
-      <BaseButton variant="secondary" to="/">Tìm thêm sách</BaseButton>
+      <BaseButton variant="secondary" to="/">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Tìm thêm sách
+      </BaseButton>
     </div>
 
     <ShelfStats :counts="shelf.counts" @select="selectStatus" />
@@ -129,13 +138,41 @@ function openBook(workId) {
 </template>
 
 <style scoped>
+.breadcrumb {
+  margin-bottom: var(--space-2);
+}
+.breadcrumb__list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.breadcrumb__link {
+  color: var(--gray-500);
+  text-decoration: none;
+}
+.breadcrumb__link:hover {
+  color: var(--primary);
+}
+.breadcrumb__sep {
+  color: var(--gray-400);
+}
+.breadcrumb__current {
+  color: var(--gray-900);
+  font-weight: var(--fw-medium);
+}
+
 .toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-3);
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 .sort-label { display: flex; align-items: center; gap: 8px; }
 .sort-label__text { font-size: var(--text-sm); color: var(--gray-500); white-space: nowrap; }

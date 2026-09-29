@@ -1,41 +1,116 @@
 :root {
+  /* ============================================================
+     W3 Procurement — Color tokens
+     Mirrors the shadcn/ui HSL theme in apps/<app>/globals.css, the
+     role-chrome palette in config/header.config.ts and the order-status
+     maps. All values are the real product values.
+     ============================================================ */
+
+  /* ---- Base neutrals (Tailwind slate/gray, used product-wide) ---- */
   --white:        #ffffff;
-  --gray-50:      #f9fafb;
+  --gray-50:      #f9fafb;   /* page bg, table header, zebra */
   --gray-100:     #f3f4f6;
-  --gray-200:     #e5e7eb;
-  --gray-300:     #d1d5db;
-  --gray-400:     #9ca3af;
-  --gray-500:     #6b7280;
+  --gray-200:     #e5e7eb;   /* default border (#E5E7EB), dividers */
+  --gray-300:     #d1d5db;   /* neutral-border, disabled */
+  --gray-400:     #9ca3af;   /* placeholder, inactive nav text */
+  --gray-500:     #6b7280;   /* neutral-text, secondary label */
   --gray-600:     #4b5563;
-  --gray-700:     #374151;
+  --gray-700:     #374151;   /* body strong */
   --gray-800:     #1f2937;
-  --gray-900:     #111827;
+  --gray-900:     #111827;   /* primary heading ink */
 
-  --primary:          #1e3faf;
-  --primary-hover:    #1d4ed8;
+  --slate-50:     #f8fafc;
+  --slate-100:    #f1f5f9;   /* secondary surface */
+  --slate-200:    #e2e8f0;   /* shadcn --border (214 32% 91%) */
+  --slate-400:    #94a3b8;
+  --slate-500:    #64748b;   /* muted-foreground */
+  --slate-700:    #334155;
+  --slate-900:    #0f172a;   /* foreground (222 84% 5%) */
+
+  /* ---- Primary (shadcn brand blue: 226 71% 40%) ---- */
+  --primary:          #1e3faf;   /* default button / brand */
+  --primary-hover:    #1d4ed8;   /* 224 76% 48% */
   --primary-fg:       #f8fafc;
-  --primary-soft:     #eff6ff;
+  --primary-soft:     #eff6ff;   /* secondary-default-hover (214 100% 97%) */
 
+  /* ---- Semantic surfaces ---- */
   --background:       #ffffff;
   --foreground:       #0f172a;
-  --border:           #e2e8f0;
-  --input-border:     #e2e8f0;
+  --card:             #ffffff;
+  --card-foreground:  #0f172a;
   --muted:            #f1f5f9;
   --muted-foreground: #64748b;
+  --border:           #e2e8f0;
+  --input-border:     #e2e8f0;
+  --ring:             #0f172a;
 
-  --destructive:    #ef4444;
-  --error:          #ef4444;
-  --error-hover:    #dc2626;
-  --error-soft:     #fee2e2;
-  --destructive-fg: #f8fafc;
+  /* ---- Destructive / error ---- */
+  --destructive:        #ef4444;   /* 0 84% 60% */
+  --error:              #ef4444;
+  --error-hover:        #dc2626;
+  --error-soft:         #fee2e2;
+  --destructive-fg:     #f8fafc;
 
-  --buyer-header:   #172554;
-  --buyer-accent:   #2559eb;
-  --buyer-active:   #2563eb;
+  /* ---- ROLE CHROME — Buyer (navy / blue) ---- */
+  --buyer-header:   #172554;   /* header bar bg */
+  --buyer-accent:   #2559eb;   /* role badge, button gradient */
+  --buyer-active:   #2563eb;   /* active nav underline */
+  --buyer-primary:  #1e40af;   /* progress bar fill */
+  --buyer-light:    #60a5fa;   /* current-step ring */
+  --buyer-badge-bg: #dbeafe;   /* counterpart role chip */
+  --buyer-badge-fg: #1e40af;
 
-  --status-done-bg: #dcfce7;
-  --status-done-fg: #166534;
-  --status-done-bd: #bbf7d0;
+  /* ---- ROLE CHROME — Supplier (emerald / forest) ---- */
+  --supplier-header:   #022c22;
+  --supplier-accent:   #059669;
+  --supplier-active:   #059669;
+  --supplier-primary:  #047857;
+  --supplier-light:    #34d399;
+  --supplier-badge-bg: #dcfce7;
+  --supplier-badge-fg: #166534;
 
+  /* ---- ROLE CHROME — Platform / Dialog admin (slate / near-black) ---- */
+  --platform-header:   #020617;
+  --platform-accent:   #ffffff;
+  --platform-active:   #64748b;
+  --platform-primary:  #475569;
+  --platform-badge-bg: #f5f5f4;
+  --platform-badge-fg: #44403c;
+
+  /* ---- STATUS — order-status map (orders/_lib/constants.ts) ---- */
+  --status-ordered-bg:   #3b82f6;
+  --status-ordered-fg:   #ffffff;
+  --status-processing-bg:#fef9c3;
+  --status-processing-fg:#854d0e;
+  --status-processing-bd:#fef08a;
+  --status-done-bg:      #dcfce7;
+  --status-done-fg:      #166534;
+  --status-done-bd:      #bbf7d0;
+  --status-cancel-bg:    #f3f4f6;
+  --status-cancel-fg:    #1f2937;
+  --status-cancel-bd:    #e5e7eb;
+
+  /* ---- PROGRESS-count chips (label + count circle) ---- */
+  --prog-amber-bg:    #fef3c7;
+  --prog-amber-fg:    #b45309;
+  --prog-amber-ct:    #b45309;
+  --prog-blue-bg:     #eff6ff;
+  --prog-blue-fg:     #1d4ed8;
+  --prog-blue-ct:     #2563eb;
+  --prog-red-bg:      #fee2e2;
+  --prog-red-fg:      #b91c1c;
+  --prog-red-ct:      #b91c1c;
+  --prog-neutral-bg:  #f9fafb;
+  --prog-neutral-fg:  #374151;
+  --prog-neutral-ct:  #6b7280;
+
+  /* ---- KPI banner accents (buyer dashboard summary cards) ---- */
+  --kpi-orange:  #f59e0b;   /* 納品承認待ち */
+  --kpi-blue:    #2563eb;   /* 検収待ち */
+  --kpi-green:   #10b981;   /* 未読メッセージ */
+
+  /* ---- Issue / warning ink ---- */
   --warn-amber:  #f59e0b;
+  --reject-red:  #b91c1c;
+  --reject-ring: #fca5a5;
 }

@@ -1,24 +1,42 @@
 :root {
-  --font-sans:  "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono:  "JetBrains Mono", ui-monospace, monospace;
-  --font-brand: "Inter", sans-serif;
+  /* ============================================================
+     W3 Procurement — Typography tokens
+     Inter (primary UI) · Noto Sans JP (Japanese) · Montserrat (brand
+     wordmark) · JetBrains Mono (IDs / code). Dense, data-heavy tool:
+     the workhorse sizes are 12px and 14px.
+     ============================================================ */
 
-  --text-2xs:  9px;
-  --text-xs:   10px;
-  --text-sm:   12px;
-  --text-base: 14px;
-  --text-md:   16px;
-  --text-lg:   18px;
-  --text-xl:   20px;
-  --text-2xl:  24px;
+  /* Families — Inter leads, Noto Sans JP carries Japanese glyphs */
+  --font-sans:    "Inter", "Noto Sans JP", system-ui, -apple-system, sans-serif;
+  --font-jp:      "Noto Sans JP", "Inter", sans-serif;
+  --font-brand:   "Montserrat", "Inter", sans-serif;   /* logo / siteName */
+  --font-mono:    "JetBrains Mono", ui-monospace, monospace;
 
-  --fw-regular:  400;
-  --fw-medium:   500;
-  --fw-semibold: 600;
-  --fw-bold:     700;
+  /* Type scale (px) — small, tight, utilitarian */
+  --text-2xs:   9px;    /* progress labels, micro counts */
+  --text-xs:    10px;   /* badge counts, nav labels */
+  --text-sm:    12px;   /* table cells, captions — the dominant size */
+  --text-base:  14px;   /* body, inputs, buttons */
+  --text-md:    16px;   /* section titles, siteName */
+  --text-lg:    18px;   /* card / panel titles */
+  --text-xl:    20px;   /* page headings */
+  --text-2xl:   24px;   /* page hero (受注管理) */
+  --text-3xl:   30px;
+  --text-4xl:   36px;
 
-  --lh-tight:   1.15;
-  --lh-snug:    1.2;
-  --lh-normal:  1.4;
-  --lh-relaxed: 1.6;
+  /* Weights */
+  --fw-regular:   400;  /* @kind font */
+  --fw-medium:    500;  /* @kind font */
+  --fw-semibold:  600;  /* @kind font */
+  --fw-bold:      700;  /* @kind font */
+
+  /* Line heights */
+  --lh-tight:   1.15;   /* @kind font */
+  --lh-snug:    1.2;    /* @kind font */
+  --lh-normal:  1.4;    /* @kind font */
+  --lh-relaxed: 1.6;    /* @kind font */
+
+  /* Letter spacing */
+  --tracking-normal: 0;        /* @kind font */
+  --tracking-wide:   0.02em;   /* @kind font */
 }

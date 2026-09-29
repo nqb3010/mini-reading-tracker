@@ -143,42 +143,77 @@ const STATUS_SELECT_OPTIONS = STATUS_OPTIONS.map((o) => ({ value: o.value, label
           <td class="td td--action">
             <button
               type="button"
-              class="del-btn"
-              :disabled="shelf.isRemoving(book.workId)"
-              aria-label="Xoá khỏi tủ"
-              @click="confirmRemove(book)"
-            >✕</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+                class="icon-btn del-btn"
+                :disabled="shelf.isRemoving(book.workId)"
+                title="Xoá khỏi tủ sách"
+                aria-label="Xoá khỏi tủ"
+                @click="confirmRemove(book)"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 </template>
 
 <style scoped>
-.table-wrap { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-.table { width: 100%; border-collapse: collapse; }
+.table-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+}
 .th {
-  padding: 8px 12px;
-  font-size: var(--text-xs);
+  padding: 10px 14px;
+  font-size: var(--text-sm);
   font-weight: var(--fw-semibold);
-  color: var(--gray-500);
+  color: var(--gray-600);
   text-align: left;
   background: var(--gray-50);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
-.th--cover  { width: 52px; }
-.th--action { width: 40px; }
-.td { padding: 8px 12px; font-size: var(--text-sm); vertical-align: middle; }
-.td--cover  { padding: 6px 8px 6px 12px; }
-.td--gray   { color: var(--gray-500); }
+.th--cover  { width: 56px; }
+.th--action { width: 48px; text-align: center; }
+.td {
+  padding: 10px 14px;
+  font-size: var(--text-sm);
+  vertical-align: middle;
+}
+.td--cover  { padding: 8px 8px 8px 14px; }
 .td--action { text-align: center; }
-.row { border-bottom: 1px solid var(--gray-100); }
-.row:last-child { border-bottom: 0; }
-.row:hover { background: var(--gray-50); }
+.row {
+  border-bottom: 1px solid var(--border);
+  background: var(--white);
+  transition: background var(--dur-fast);
+}
+.row:nth-child(even) {
+  background: var(--gray-50);
+}
+.row:hover {
+  background: var(--slate-100);
+}
+.row:last-child {
+  border-bottom: 0;
+}
 
-.cover-btn { border: none; background: transparent; cursor: pointer; padding: 0; display: block; }
+.cover-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  display: block;
+}
 
 .title-btn {
   display: block;
@@ -190,12 +225,22 @@ const STATUS_SELECT_OPTIONS = STATUS_OPTIONS.map((o) => ({ value: o.value, label
   font-weight: var(--fw-semibold);
   color: var(--gray-900);
   padding: 0;
-  max-width: 240px;
+  max-width: 260px;
+  transition: color var(--dur-fast);
 }
-.title-btn:hover { color: var(--primary); }
-.book-authors { margin: 2px 0 0; color: var(--gray-500); font-size: var(--text-xs); max-width: 240px; }
+.title-btn:hover {
+  color: var(--primary);
+}
+.book-authors {
+  margin: 3px 0 0;
+  color: var(--gray-500);
+  font-size: var(--text-xs);
+  max-width: 260px;
+}
 
-.note-cell { max-width: 200px; }
+.note-cell {
+  max-width: 200px;
+}
 .note-display {
   display: block;
   width: 100%;
@@ -205,7 +250,7 @@ const STATUS_SELECT_OPTIONS = STATUS_OPTIONS.map((o) => ({ value: o.value, label
   font-size: var(--text-xs);
   color: var(--gray-700);
   cursor: pointer;
-  padding: 3px 5px;
+  padding: 3px 6px;
   border-radius: var(--radius-sm);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -213,9 +258,19 @@ const STATUS_SELECT_OPTIONS = STATUS_OPTIONS.map((o) => ({ value: o.value, label
   max-width: 200px;
   transition: border-color var(--dur-fast), background var(--dur-fast);
 }
-.note-display:hover { border-color: var(--gray-300); background: var(--gray-50); }
-.note-display--empty { color: var(--gray-400); font-style: italic; }
-.note-edit { display: flex; flex-direction: column; gap: 4px; }
+.note-display:hover {
+  border-color: var(--gray-300);
+  background: var(--gray-100);
+}
+.note-display--empty {
+  color: var(--gray-400);
+  font-style: italic;
+}
+.note-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 .note-input {
   width: 100%;
   min-width: 160px;
@@ -227,7 +282,10 @@ const STATUS_SELECT_OPTIONS = STATUS_OPTIONS.map((o) => ({ value: o.value, label
   resize: vertical;
   outline: none;
 }
-.note-actions { display: flex; gap: 4px; }
+.note-actions {
+  display: flex;
+  gap: 4px;
+}
 .note-save, .note-cancel {
   height: 22px;
   padding: 0 8px;
@@ -240,19 +298,32 @@ const STATUS_SELECT_OPTIONS = STATUS_OPTIONS.map((o) => ({ value: o.value, label
 .note-save   { background: var(--primary); border-color: var(--primary); color: var(--white); }
 .note-cancel { background: var(--white); border-color: var(--border); color: var(--gray-700); }
 
-.del-btn {
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 0;
   background: transparent;
-  color: var(--gray-400);
   cursor: pointer;
-  font-size: 11px;
-  transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
+  color: var(--gray-400);
+  transition:
+    background var(--dur-fast),
+    color var(--dur-fast);
 }
-.del-btn:not(:disabled):hover { background: var(--error-soft); border-color: var(--error); color: var(--error); }
-.del-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.del-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+}
+.del-btn:not(:disabled):hover {
+  background: var(--error-soft);
+  color: var(--error);
+}
+.del-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 @media (max-width: 1100px) { .th--hide-lg, .td.th--hide-lg { display: none; } }
 @media (max-width: 900px)  { .th--hide-md, .td.th--hide-md  { display: none; } }

@@ -1,0 +1,6 @@
+/* W3 Procurement — Webfonts
+   The product loads its faces from Google Fonts (see apps/<app>/globals.css).
+   Inter = primary UI; Noto Sans JP = Japanese text; Montserrat = brand wordmark;
+   JetBrains Mono = IDs / monospace. All four are Google-hosted, so no local
+   binaries are shipped — the @import below is the font source of record. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Montserrat:wght@600;700&family=JetBrains+Mono:wght@500&display=swap");

@@ -1,18 +1,25 @@
-*, *::before, *::after { box-sizing: border-box; }
+/*
+ * Shared UI foundation of Mini Reading Tracker, based on the UI prototype
+ * (specs/ui-prototype/reading-tracker.html). Color/type/spacing tokens live in ./tokens/.
+ */
 
 body {
   margin: 0;
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  line-height: var(--lh-normal);
-  color: var(--foreground);
   background: var(--gray-50);
-  -webkit-font-smoothing: antialiased;
 }
 
-button, input, select, textarea { font-family: inherit; }
-img { max-width: 100%; }
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
 
+img {
+  max-width: 100%;
+}
+
+/* ---------- Page layout ---------- */
 .rt-page {
   max-width: 1320px;
   margin: 0 auto;
@@ -44,6 +51,35 @@ img { max-width: 100%; }
   font-weight: var(--fw-semibold);
   color: var(--gray-500);
 }
+
+/* ---------- Text utilities ---------- */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.clamp-1,
+.clamp-2,
+.clamp-6 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.clamp-1 {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+.clamp-2 {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+.clamp-6 {
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+}
+/* Error codes, work ids: monospace text on a gray background */
 .rt-code {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -53,6 +89,7 @@ img { max-width: 100%; }
   padding: 2px 8px;
   white-space: nowrap;
 }
+/* Visually hidden, but still read by screen readers */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -64,37 +101,51 @@ img { max-width: 100%; }
   white-space: nowrap;
   border: 0;
 }
-.tabular { font-variant-numeric: tabular-nums; }
-.clamp-1, .clamp-2, .clamp-6 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.clamp-1 { -webkit-line-clamp: 1; }
-.clamp-2 { -webkit-line-clamp: 2; }
-.clamp-6 { -webkit-line-clamp: 6; }
 
+/* ---------- Skeletons & spinner ---------- */
 .rt-skel {
   background: var(--gray-100);
   border-radius: var(--radius-sm);
   animation: rt-pulse 1.4s ease-in-out infinite;
 }
 @keyframes rt-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
-.rt-spin { animation: rt-spin 0.8s linear infinite; }
-@keyframes rt-spin { to { transform: rotate(360deg); } }
+.rt-spin {
+  animation: rt-spin 0.8s linear infinite;
+}
+@keyframes rt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
+/* ---------- Visible keyboard focus (ui-routes.md § 7) ---------- */
 :focus-visible {
   outline: 2px solid var(--primary-hover);
   outline-offset: 1px;
 }
 
 @media (max-width: 640px) {
-  .rt-page { padding: var(--space-4) var(--space-4) var(--space-16); }
+  .rt-page {
+    padding: var(--space-4) var(--space-4) var(--space-16);
+  }
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .rt-skel, .rt-spin { animation: none; }
-  *, *::before, *::after { transition-duration: 0.01ms !important; }
+  .rt-skel,
+  .rt-spin {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
 }

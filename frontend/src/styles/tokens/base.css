@@ -1,0 +1,36 @@
+/* ============================================================
+   W3 Procurement — base element defaults
+   Light, neutral document baseline matching the product:
+   white app shell, gray-50 page background, Inter/Noto body ink.
+   ============================================================ */
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--lh-normal);
+  color: var(--gray-900);
+  background: var(--gray-50);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Tabular figures for the many numeric tables / currency cells */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Monospaced IDs (PO-2026-05-011, SKU-CB002-100) */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

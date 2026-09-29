@@ -1,4 +1,7 @@
+/* CSS entry point: W3 tokens (in the same order as w3-ds/styles.css), then the app foundation. */
+@import './tokens/fonts.css';
 @import './tokens/colors.css';
 @import './tokens/typography.css';
 @import './tokens/spacing.css';
+@import './tokens/base.css';
 @import './base.css';
