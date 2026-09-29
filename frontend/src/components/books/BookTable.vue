@@ -1,9 +1,11 @@
 <script setup>
 import BookCover from './BookCover.vue'
+import { useShelfStore } from '../../stores/shelf'
 import { statusLabel } from '../../utils/status'
 
 defineProps({ books: { type: Array, required: true }, loading: { type: Boolean, default: false } })
 const emit = defineEmits(['open'])
+const shelf = useShelfStore()
 
 const SKELETONS = Array.from({ length: 10 })
 </script>
@@ -50,7 +52,9 @@ const SKELETONS = Array.from({ length: 10 })
           </td>
           <td class="td td--gray tabular">{{ book.firstPublishYear ?? '—' }}</td>
           <td class="td th--hide-sm">
-            <span v-if="book.inShelf" class="status-chip">{{ statusLabel(book.shelfStatus) }}</span>
+            <span v-if="shelf.isInShelf(book.workId) || book.inShelf" class="status-chip">
+              {{ statusLabel(shelf.statusOf(book.workId) || book.shelfStatus) }}
+            </span>
             <span v-else class="td--gray">—</span>
           </td>
         </tr>

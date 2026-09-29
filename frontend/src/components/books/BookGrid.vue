@@ -1,15 +1,12 @@
 <script setup>
 import BookCover from './BookCover.vue'
-import BaseButton from '../ui/BaseButton.vue'
-import { useShelfStore } from '../../stores/shelf'
-import { statusLabel } from '../../utils/status'
+import AddToShelfButton from './AddToShelfButton.vue'
 
 defineProps({
   books: { type: Array, required: true },
   loading: { type: Boolean, default: false },
 })
 const emit = defineEmits(['open'])
-const shelf = useShelfStore()
 
 const SKELETONS = Array.from({ length: 20 })
 </script>
@@ -47,25 +44,13 @@ const SKELETONS = Array.from({ length: 20 })
           </div>
         </button>
         <div class="card__action">
-          <div v-if="book.inShelf" class="added">
-            <span class="added__badge">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-              Đã thêm
-            </span>
-            <span v-if="book.shelfStatus" class="added__status">{{ statusLabel(book.shelfStatus) }}</span>
-          </div>
-          <BaseButton
-            v-else
-            variant="secondary"
-            size="sm"
+          <AddToShelfButton
+            :work-id="book.workId"
+            :title="book.title"
+            :initial-in-shelf="book.inShelf"
+            :initial-status="book.shelfStatus"
             full-width
-            :loading="shelf.isAdding ? shelf.isAdding(book.workId) : false"
-            :aria-label="`Thêm ${book.title} vào tủ`"
-            @click.stop="shelf.add(book.workId, 'want_to_read', book.title)"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-            Thêm vào tủ
-          </BaseButton>
+          />
         </div>
       </article>
     </template>
