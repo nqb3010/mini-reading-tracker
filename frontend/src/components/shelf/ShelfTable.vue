@@ -76,7 +76,7 @@ const STATUS_SELECT_OPTIONS = STATUS_OPTIONS.map((o) => ({ value: o.value, label
           <td class="td td--cover">
             <button type="button" class="cover-btn" @click="emit('open', book.workId)">
               <div style="width:36px;height:52px;border-radius:3px;overflow:hidden;border:1px solid var(--border)">
-                <BookCover :cover-id="book.coverId" :title="book.title" size="S" radius="3px" />
+                <BookCover :cover-id="book.coverId" :title="book.title" size="S" width="36px" height="52px" radius="3px" :icon-size="16" />
               </div>
             </button>
           </td>

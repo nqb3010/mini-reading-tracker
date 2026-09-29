@@ -39,7 +39,7 @@ const SKELETONS = Array.from({ length: 10 })
         >
           <td class="td td--cover">
             <div style="width:32px;height:46px;border-radius:3px;overflow:hidden;border:1px solid var(--border)">
-              <BookCover :cover-id="book.coverId" :title="book.title" size="S" radius="3px" />
+              <BookCover :cover-id="book.coverId" :title="book.title" size="S" width="32px" height="46px" radius="3px" :icon-size="16" />
             </div>
           </td>
           <td class="td td--title">

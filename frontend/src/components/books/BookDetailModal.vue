@@ -106,7 +106,8 @@ function openShelf() {
           :cover-id="detail.coverId"
           :title="detail.title"
           size="L"
-          radius="4px"
+          radius="6px"
+          :icon-size="40"
           class="detail__cover-img"
         />
       </div>
