@@ -233,23 +233,21 @@ Tài liệu tương tác: **Swagger UI** tại [`/api/docs`](http://localhost:30
 git clone https://github.com/nqb3010/mini-reading-tracker.git /www/wwwroot/baonq.site
 cd /www/wwwroot/baonq.site
 
-# 3. Cấu hình Backend:
-cd backend
-cp .env.example .env
-# Chỉnh sửa .env: điền mật khẩu MySQL, port, CORS_ORIGINS=https://baonq.site,http://baonq.site
+# 3. Cài đặt toàn bộ dependencies (bao gồm Vite để build frontend):
+npm install --include=dev
 
-npm install --omit=dev
-node src/db/migrate.js
-node src/db/seed.js
+# 4. Cấu hình Backend & Database:
+cp backend/.env.example backend/.env
+# Chỉnh sửa backend/.env: điền thông tin kết nối MySQL (DB_HOST, DB_USER, DB_PASS, DB_PORT)
+npm run db:migrate
+npm run db:seed
 
-# Khởi động Backend với PM2:
-pm2 start src/server.js --name reading-tracker-api
+# 5. Khởi động Backend 24/7 với PM2:
+pm2 start backend/src/server.js --name reading-tracker-api
 pm2 save
 pm2 startup
 
-# 4. Build Frontend:
-cd ../frontend
-npm install
+# 6. Build Frontend:
 npm run build        # output sinh ra thư mục /www/wwwroot/baonq.site/frontend/dist/
 ```
 
