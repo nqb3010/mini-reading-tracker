@@ -1,0 +1,23 @@
+{
+  "name": "mini-reading-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mini Reading Tracker (Vue 3 + Express + Sequelize + MySQL)",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w frontend",
+    "start": "npm run start -w backend",
+    "db:up": "docker compose -f docker-compose.yml up -d --wait",
+    "db:down": "docker compose -f docker-compose.yml down",
+    "db:logs": "docker compose -f docker-compose.yml logs -f mysql",
+    "db:migrate": "npm run db:migrate -w backend",
+    "db:seed": "npm run db:seed -w backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

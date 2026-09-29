@@ -1,0 +1,675 @@
+openapi: 3.1.0
+info:
+  title: Mini Reading Tracker API
+  version: 1.0.0
+  description: |
+    API backend của Mini Reading Tracker (feature `001-mini-reading-tracker`).
+
+    - Ứng dụng cho **một người dùng**, không cần xác thực (spec FR-034).
+    - Mọi dữ liệu sách đều đi qua backend, kể cả ảnh bìa; trình duyệt không gọi thẳng Open Library (spec FR-030).
+    - **Envelope thành công**: `{ "data": ..., "meta"?: ... }`.
+    - **Envelope lỗi** (spec FR-032): `{ "error": { "code", "message", "details"? } }`. `message` là tiếng Anh.
+    - Thời gian chờ Open Library: 8 giây cho mỗi request (research R7).
+  license:
+    name: MIT
+    identifier: MIT
+# Ứng dụng một người dùng, không có xác thực (spec FR-034).
+security: []
+servers:
+  - url: http://localhost:3000
+    description: Backend khi chạy local (cổng 3000, frontend proxy /api)
+tags:
+  - name: Books
+    description: Tìm kiếm và xem chi tiết sách (proxy Open Library)
+  - name: Covers
+    description: Proxy ảnh bìa
+  - name: Shelf
+    description: Tủ sách cá nhân (lưu trong MySQL)
+  - name: System
+    description: Kiểm tra tình trạng hệ thống
+
+paths:
+  /api/health:
+    get:
+      tags: [System]
+      operationId: getHealth
+      summary: Kiểm tra backend và kết nối CSDL
+      responses:
+        '200':
+          description: Hệ thống hoạt động
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [status, database]
+                    properties:
+                      status: { type: string, const: ok }
+                      database: { type: string, const: up }
+        '503':
+          $ref: '#/components/responses/DatabaseUnavailable'
+
+  /api/books/search:
+    get:
+      tags: [Books]
+      operationId: searchBooks
+      summary: Tìm sách theo tên hoặc tác giả
+      description: |
+        Proxy tới `GET https://openlibrary.org/search.json?q={q}&page={page}&limit=20`.
+        Mỗi kết quả kèm `inShelf` và `shelfStatus` lấy từ tủ sách (spec FR-004).
+        Trang vượt quá số trang thực tế trả `items: []` kèm `total` đúng, không coi là lỗi.
+        Kết quả được cache 10 phút theo cặp (q, page); riêng `inShelf` luôn tính lại theo CSDL.
+      parameters:
+        - $ref: '#/components/parameters/Query'
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: Một trang kết quả
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SearchResultEnvelope' }
+              examples:
+                hobbit:
+                  value:
+                    data:
+                      query: the hobbit
+                      page: 1
+                      pageSize: 20
+                      total: 460
+                      totalPages: 23
+                      items:
+                        - workId: OL27482W
+                          title: The Hobbit
+                          authors: [J.R.R. Tolkien]
+                          firstPublishYear: 1937
+                          coverId: 14627509
+                          totalPages: 310
+                          inShelf: true
+                          shelfStatus: reading
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '502': { $ref: '#/components/responses/UpstreamUnavailable' }
+        '503': { $ref: '#/components/responses/UpstreamRateLimited' }
+        '504': { $ref: '#/components/responses/UpstreamTimeout' }
+
+  /api/books/suggestions:
+    get:
+      tags: [Books]
+      operationId: getSuggestions
+      summary: Danh sách sách gợi ý cho trang chủ khi chưa nhập từ khoá
+      description: |
+        Tìm với từ khoá cấu hình `SUGGESTION_QUERY` (mặc định `subject:classics`) và `sort=editions` (research R23).
+        Response có cùng cấu trúc với `/api/books/search`; `query` là `null`.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+      responses:
+        '200':
+          description: Một trang sách gợi ý
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SearchResultEnvelope' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '502': { $ref: '#/components/responses/UpstreamUnavailable' }
+        '503': { $ref: '#/components/responses/UpstreamRateLimited' }
+        '504': { $ref: '#/components/responses/UpstreamTimeout' }
+
+  /api/books/{workId}:
+    get:
+      tags: [Books]
+      operationId: getBookDetail
+      summary: Chi tiết một tác phẩm
+      description: |
+        Gọi song song `GET /works/{workId}.json` và `GET /search.json?q=key:"/works/{workId}"` rồi gộp kết quả (research R7):
+        - Nếu work là bản ghi chuyển hướng (`/type/redirect`), backend đi theo `location` (tối đa 3 bước). `data.workId` trả về là mã **cuối cùng**.
+        - `description` được chuẩn hoá từ chuỗi hoặc `{type, value}`.
+        - `shelfEntry` có giá trị khi sách đã có trong tủ (spec FR-010).
+      parameters:
+        - $ref: '#/components/parameters/WorkId'
+      responses:
+        '200':
+          description: Chi tiết tác phẩm
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/BookDetail' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404':
+          description: Open Library không có tác phẩm này (`BOOK_NOT_FOUND`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: BOOK_NOT_FOUND
+                  message: This book was not found on Open Library.
+        '502': { $ref: '#/components/responses/UpstreamUnavailable' }
+        '503': { $ref: '#/components/responses/UpstreamRateLimited' }
+        '504': { $ref: '#/components/responses/UpstreamTimeout' }
+
+  /api/covers/{coverId}:
+    get:
+      tags: [Covers]
+      operationId: getCover
+      summary: Ảnh bìa (proxy covers.openlibrary.org)
+      description: |
+        Stream `https://covers.openlibrary.org/b/id/{coverId}-{size}.jpg?default=false` (research R9).
+        Trả `Cache-Control: public, max-age=604800`.
+        Upstream 404 thì trả 404; giao diện hiển thị ảnh thay thế "Chưa có ảnh bìa".
+      parameters:
+        - name: coverId
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+          example: 14627509
+        - name: size
+          in: query
+          required: false
+          schema: { type: string, enum: [S, M, L], default: M }
+      responses:
+        '200':
+          description: Ảnh bìa
+          headers:
+            Cache-Control:
+              schema: { type: string, example: 'public, max-age=604800' }
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404':
+          description: Không có ảnh bìa (`COVER_NOT_FOUND`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '502': { $ref: '#/components/responses/UpstreamUnavailable' }
+        '504': { $ref: '#/components/responses/UpstreamTimeout' }
+
+  /api/shelf:
+    get:
+      tags: [Shelf]
+      operationId: listShelf
+      summary: Danh sách sách trong tủ kèm thống kê
+      description: |
+        `counts` luôn tính trên toàn bộ tủ sách, không phụ thuộc `status` (spec FR-016).
+        Không phân trang: phạm vi một người dùng, dự kiến tối đa vài trăm cuốn.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Lọc theo tab. Bỏ trống thì trả mọi trạng thái.
+          schema: { $ref: '#/components/schemas/ReadingStatus' }
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [recent, title, progress, rating]
+            default: recent
+      responses:
+        '200':
+          description: Danh sách và thống kê
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [items, counts]
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/ShelfBook' }
+                      counts: { $ref: '#/components/schemas/ShelfCounts' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+
+    post:
+      tags: [Shelf]
+      operationId: addToShelf
+      summary: Thêm sách vào tủ
+      description: |
+        Client chỉ gửi `workId` và `status`. Server tự lấy snapshot (tên, tác giả, ảnh bìa, năm, tổng số trang) qua dịch vụ chi tiết (research R11).
+        Nếu `workId` là mã bị chuyển hướng, mục được lưu dưới mã **cuối cùng**.
+        Các mốc ngày được đặt theo quy tắc ở data-model § 3 (spec FR-011, FR-013).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateShelfBookRequest' }
+            examples:
+              quickAdd:
+                summary: Thêm nhanh từ kết quả tìm kiếm
+                value: { workId: OL27482W }
+              fromDetail:
+                summary: Thêm từ hộp thoại chi tiết với trạng thái Đang đọc
+                value: { workId: OL27448W, status: reading }
+      responses:
+        '201':
+          description: Đã thêm
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/ShelfBook' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404':
+          description: Tác phẩm không tồn tại trên Open Library (`BOOK_NOT_FOUND`)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '409':
+          description: Sách đã có trong tủ (spec FR-012)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              example:
+                error:
+                  code: BOOK_ALREADY_IN_SHELF
+                  message: This book is already on your shelf.
+        '502': { $ref: '#/components/responses/UpstreamUnavailable' }
+        '503': { $ref: '#/components/responses/UpstreamRateLimited' }
+        '504': { $ref: '#/components/responses/UpstreamTimeout' }
+
+  /api/shelf/{workId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkId'
+    patch:
+      tags: [Shelf]
+      operationId: updateShelfBook
+      summary: Cập nhật tiến độ, trạng thái, đánh giá hoặc ghi chú
+      description: |
+        Cập nhật một phần. Body phải có ít nhất một trường.
+        Quy tắc nghiệp vụ (data-model § 3, spec FR-018–FR-025):
+        - `currentPage` là số nguyên 0..`totalPages`. Bị từ chối khi `totalPages` là `null`.
+        - `currentPage == totalPages` thì tự chuyển `read` và `meta.autoFinished = true`.
+        - `currentPage < totalPages` khi đang `read` thì tự chuyển `reading`.
+        - Nếu body có cả `currentPage` và `status`, `currentPage` được áp trước, sau đó `status` tường minh ghi đè trạng thái.
+        - `rating: null` bỏ điểm. `note: null` hoặc `""` xoá ghi chú.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateShelfBookRequest' }
+            examples:
+              progress: { value: { currentPage: 200 } }
+              finish: { value: { currentPage: 444 } }
+              changeStatus: { value: { status: reading } }
+              rate: { value: { rating: 4 } }
+              clearRating: { value: { rating: null } }
+              note: { value: { note: 'Chương 3 về hàm rất đáng đọc lại.' } }
+      responses:
+        '200':
+          description: Đã cập nhật
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { $ref: '#/components/schemas/ShelfBook' }
+                  meta:
+                    type: object
+                    required: [autoFinished]
+                    properties:
+                      autoFinished:
+                        type: boolean
+                        description: '`true` khi request này làm sách tự chuyển sang `read` vì đã đọc tới trang cuối.'
+        '400':
+          description: Dữ liệu không hợp lệ
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+              examples:
+                pageOutOfRange:
+                  value:
+                    error:
+                      code: VALIDATION_ERROR
+                      message: Invalid input data.
+                      details:
+                        - field: currentPage
+                          message: Must not exceed 444 pages.
+                noTotalPages:
+                  value:
+                    error:
+                      code: VALIDATION_ERROR
+                      message: Invalid input data.
+                      details:
+                        - field: currentPage
+                          message: This book has no total page count, so its current page cannot be updated.
+        '404': { $ref: '#/components/responses/ShelfBookNotFound' }
+    delete:
+      tags: [Shelf]
+      operationId: removeFromShelf
+      summary: Xoá sách khỏi tủ (xoá vĩnh viễn)
+      responses:
+        '204':
+          description: Đã xoá
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/ShelfBookNotFound' }
+
+components:
+  parameters:
+    Query:
+      name: q
+      in: query
+      required: true
+      description: Từ khoá tên sách hoặc tác giả. Được trim và gộp khoảng trắng; độ dài 1–200 ký tự.
+      schema: { type: string, minLength: 1, maxLength: 200 }
+      example: harry potter
+    Page:
+      name: page
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 1000, default: 1 }
+    WorkId:
+      name: workId
+      in: path
+      required: true
+      description: Mã tác phẩm Open Library, ví dụ `OL27482W`.
+      schema: { $ref: '#/components/schemas/WorkId' }
+
+  responses:
+    ValidationError:
+      description: Dữ liệu đầu vào không hợp lệ
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Invalid input data.
+              details:
+                - field: q
+                  message: The keyword must be at most 200 characters.
+    ShelfBookNotFound:
+      description: Sách không có trong tủ
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            error:
+              code: SHELF_BOOK_NOT_FOUND
+              message: This book is not on your shelf.
+    UpstreamUnavailable:
+      description: Open Library lỗi hoặc không kết nối được
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            error:
+              code: UPSTREAM_UNAVAILABLE
+              message: The Open Library server is not responding. Please try again in a few minutes.
+    UpstreamRateLimited:
+      description: Open Library đang giới hạn số lượt truy cập
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            error:
+              code: UPSTREAM_RATE_LIMITED
+              message: Open Library is overloaded. Please try again in a few minutes.
+    UpstreamTimeout:
+      description: Open Library phản hồi quá 8 giây
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            error:
+              code: UPSTREAM_TIMEOUT
+              message: Open Library took too long to respond. Please try again.
+    DatabaseUnavailable:
+      description: Không kết nối được CSDL
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example:
+            error:
+              code: DATABASE_UNAVAILABLE
+              message: Cannot connect to the database.
+
+  schemas:
+    WorkId:
+      type: string
+      pattern: '^OL[1-9][0-9]*W$'
+      example: OL27482W
+
+    ReadingStatus:
+      type: string
+      enum: [want_to_read, reading, read]
+      description: 'want_to_read = Muốn đọc · reading = Đang đọc · read = Đã đọc'
+
+    IsoDate:
+      type: string
+      format: date
+      description: Ngày theo giờ Việt Nam (`APP_TIMEZONE`), định dạng `YYYY-MM-DD`.
+      example: '2026-09-28'
+
+    BookSummary:
+      type: object
+      required: [workId, title, authors, firstPublishYear, coverId, totalPages, inShelf, shelfStatus]
+      properties:
+        workId: { $ref: '#/components/schemas/WorkId' }
+        title: { type: string }
+        authors:
+          type: array
+          items: { type: string }
+          description: Có thể rỗng (giao diện hiển thị "Không rõ tác giả").
+        firstPublishYear: { type: [integer, 'null'] }
+        coverId:
+          type: [integer, 'null']
+          description: Dùng với `/api/covers/{coverId}`. `null` nghĩa là không có ảnh bìa.
+        totalPages:
+          type: [integer, 'null']
+          description: '`number_of_pages_median`; `null` nghĩa là không có số trang.'
+        inShelf: { type: boolean }
+        shelfStatus:
+          oneOf:
+            - $ref: '#/components/schemas/ReadingStatus'
+            - type: 'null'
+
+    BookDetail:
+      allOf:
+        - $ref: '#/components/schemas/BookSummary'
+        - type: object
+          required: [description, subjects, shelfEntry]
+          properties:
+            description: { type: [string, 'null'] }
+            subjects:
+              type: array
+              maxItems: 30
+              items: { type: string }
+            shelfEntry:
+              oneOf:
+                - $ref: '#/components/schemas/ShelfBook'
+                - type: 'null'
+
+    SearchResult:
+      type: object
+      required: [query, page, pageSize, total, totalPages, items]
+      properties:
+        query:
+          type: [string, 'null']
+          description: Từ khoá đã chuẩn hoá; `null` với danh sách gợi ý.
+        page: { type: integer, minimum: 1 }
+        pageSize: { type: integer, const: 20 }
+        total: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/BookSummary' }
+
+    SearchResultEnvelope:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/SearchResult' }
+
+    ShelfBook:
+      type: object
+      required:
+        - workId
+        - title
+        - authors
+        - coverId
+        - firstPublishYear
+        - totalPages
+        - status
+        - currentPage
+        - progressPercent
+        - rating
+        - note
+        - startedAt
+        - finishedAt
+        - addedAt
+        - updatedAt
+      properties:
+        workId: { $ref: '#/components/schemas/WorkId' }
+        title: { type: string }
+        authors:
+          type: array
+          items: { type: string }
+        coverId: { type: [integer, 'null'] }
+        firstPublishYear: { type: [integer, 'null'] }
+        totalPages: { type: [integer, 'null'] }
+        status: { $ref: '#/components/schemas/ReadingStatus' }
+        currentPage: { type: integer, minimum: 0 }
+        progressPercent:
+          type: [integer, 'null']
+          minimum: 0
+          maximum: 100
+          description: '`round(currentPage / totalPages * 100)`; `null` khi `totalPages` là `null`.'
+        rating:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 5
+        note:
+          type: [string, 'null']
+          maxLength: 500
+        startedAt:
+          oneOf:
+            - $ref: '#/components/schemas/IsoDate'
+            - type: 'null'
+        finishedAt:
+          oneOf:
+            - $ref: '#/components/schemas/IsoDate'
+            - type: 'null'
+        addedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      example:
+        workId: OL17618370W
+        title: Clean Code
+        authors: [Robert C. Martin]
+        coverId: 8065615
+        firstPublishYear: 2008
+        totalPages: 444
+        status: reading
+        currentPage: 380
+        progressPercent: 86
+        rating: null
+        note: Chương 3 về hàm rất đáng đọc lại.
+        startedAt: '2026-08-25'
+        finishedAt: null
+        addedAt: '2026-08-24T02:10:00.000Z'
+        updatedAt: '2026-09-27T13:45:12.000Z'
+
+    ShelfCounts:
+      type: object
+      required: [total, want_to_read, reading, read]
+      properties:
+        total: { type: integer, minimum: 0 }
+        want_to_read: { type: integer, minimum: 0 }
+        reading: { type: integer, minimum: 0 }
+        read: { type: integer, minimum: 0 }
+
+    CreateShelfBookRequest:
+      type: object
+      additionalProperties: false
+      required: [workId]
+      properties:
+        workId: { $ref: '#/components/schemas/WorkId' }
+        status:
+          allOf:
+            - $ref: '#/components/schemas/ReadingStatus'
+          default: want_to_read
+
+    UpdateShelfBookRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        currentPage: { type: integer, minimum: 0 }
+        status: { $ref: '#/components/schemas/ReadingStatus' }
+        rating:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 5
+        note:
+          type: [string, 'null']
+          maxLength: 500
+
+    ErrorCode:
+      type: string
+      description: |
+        | code | HTTP | Khi nào |
+        | --- | --- | --- |
+        | VALIDATION_ERROR | 400 | Dữ liệu đầu vào sai (có `details`) |
+        | INVALID_JSON | 400 | Body không phải JSON hợp lệ |
+        | BOOK_NOT_FOUND | 404 | Open Library không có tác phẩm |
+        | COVER_NOT_FOUND | 404 | Không có ảnh bìa |
+        | SHELF_BOOK_NOT_FOUND | 404 | Sách không có trong tủ |
+        | ROUTE_NOT_FOUND | 404 | Sai đường dẫn API |
+        | BOOK_ALREADY_IN_SHELF | 409 | Thêm trùng |
+        | PAYLOAD_TOO_LARGE | 413 | Body > 10 KB |
+        | INTERNAL_ERROR | 500 | Lỗi không lường trước (không kèm stack trace) |
+        | UPSTREAM_UNAVAILABLE | 502 | Open Library lỗi hoặc không kết nối được |
+        | UPSTREAM_RATE_LIMITED | 503 | Open Library trả 429/503 |
+        | DATABASE_UNAVAILABLE | 503 | Không kết nối được CSDL |
+        | UPSTREAM_TIMEOUT | 504 | Open Library phản hồi quá 8 giây |
+      enum:
+        - VALIDATION_ERROR
+        - INVALID_JSON
+        - BOOK_NOT_FOUND
+        - COVER_NOT_FOUND
+        - SHELF_BOOK_NOT_FOUND
+        - ROUTE_NOT_FOUND
+        - BOOK_ALREADY_IN_SHELF
+        - PAYLOAD_TOO_LARGE
+        - INTERNAL_ERROR
+        - UPSTREAM_UNAVAILABLE
+        - UPSTREAM_RATE_LIMITED
+        - DATABASE_UNAVAILABLE
+        - UPSTREAM_TIMEOUT
+
+    ErrorDetail:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          description: Đường dẫn trường bị lỗi, ví dụ `currentPage`, `q`.
+        message:
+          type: string
+          description: Thông báo tiếng Anh cho trường này.
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { $ref: '#/components/schemas/ErrorCode' }
+            message:
+              type: string
+              description: Thông báo tiếng Anh, hiển thị được trực tiếp cho người dùng.
+            details:
+              type: array
+              items: { $ref: '#/components/schemas/ErrorDetail' }

@@ -1,0 +1,24 @@
+:root {
+  --font-sans:  "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono:  "JetBrains Mono", ui-monospace, monospace;
+  --font-brand: "Inter", sans-serif;
+
+  --text-2xs:  9px;
+  --text-xs:   10px;
+  --text-sm:   12px;
+  --text-base: 14px;
+  --text-md:   16px;
+  --text-lg:   18px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  --lh-tight:   1.15;
+  --lh-snug:    1.2;
+  --lh-normal:  1.4;
+  --lh-relaxed: 1.6;
+}

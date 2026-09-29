@@ -1,0 +1,45 @@
+# MySQL 8.4 for Mini Reading Tracker dev and tests. This is NOT a deployment config.
+#
+# Isolated from the other Docker project on this machine (research R25):
+#   - project `reading-tracker`, container `reading-tracker-mysql`;
+#   - binds only 127.0.0.1:3317 (never 3306/3309);
+#   - its own volume and network, explicitly declared and named.
+# Manage it only through `npm run db:up | db:down | db:logs | db:destroy`.
+# Never run `docker … prune`.
+name: reading-tracker
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: reading-tracker-mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      # Credentials for the local dev container only, bound to 127.0.0.1.
+      MYSQL_ROOT_PASSWORD: reading_root_dev
+      MYSQL_DATABASE: reading_tracker
+      MYSQL_USER: reading
+      MYSQL_PASSWORD: reading
+      TZ: UTC
+    ports:
+      - '127.0.0.1:3317:3306'
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # Creates reading_tracker_test and reading_tracker_shadow (runs only while the volume is empty)
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - reading-tracker-net
+    healthcheck:
+      # Ping over TCP: healthy only once the real server has finished the init scripts.
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '--silent']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+volumes:
+  mysql-data:
+    name: reading-tracker-mysql-data
+
+networks:
+  reading-tracker-net:
+    name: reading-tracker-net
